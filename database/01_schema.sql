@@ -285,3 +285,89 @@ CREATE TABLE reviews (
     CONSTRAINT unique_customer_product_review
         UNIQUE (customer_id, product_id)
 );
+
+/*
+=========================================================
+INDEXES
+=========================================================
+Indexes improve query performance when searching,
+filtering, joining, or sorting by commonly used columns.
+=========================================================
+*/
+
+/*
+Customer lookup by email.
+*/
+CREATE INDEX idx_customers_email
+    ON customers(email);
+
+/*
+Find addresses belonging to a customer.
+*/
+CREATE INDEX idx_addresses_customer_id
+    ON addresses(customer_id);
+
+/*
+Find products by category.
+*/
+CREATE INDEX idx_products_category_id
+    ON products(category_id);
+
+/*
+Find low-stock products efficiently.
+*/
+CREATE INDEX idx_products_inventory_quantity
+    ON products(inventory_quantity);
+
+/*
+Find orders belonging to a customer.
+*/
+CREATE INDEX idx_orders_customer_id
+    ON orders(customer_id);
+
+/*
+Find orders by date.
+
+Useful for:
+    - monthly sales
+    - sales reports
+    - revenue analytics
+*/
+CREATE INDEX idx_orders_order_date
+    ON orders(order_date);
+
+/*
+Find orders by status.
+*/
+CREATE INDEX idx_orders_status
+    ON orders(status);
+
+/*
+Find order items belonging to an order.
+*/
+CREATE INDEX idx_order_items_order_id
+    ON order_items(order_id);
+
+/*
+Find all orders containing a product.
+*/
+CREATE INDEX idx_order_items_product_id
+    ON order_items(product_id);
+
+/*
+Find reviews for a product.
+*/
+CREATE INDEX idx_reviews_product_id
+    ON reviews(product_id);
+
+/*
+Find reviews written by a customer.
+*/
+CREATE INDEX idx_reviews_customer_id
+    ON reviews(customer_id);
+
+/*
+=========================================================
+SCHEMA COMPLETE
+=========================================================
+*/
