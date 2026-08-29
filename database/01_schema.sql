@@ -13,6 +13,8 @@ Main entities:
     addresses
     categories
     products
+    orders
+    order_items
 
 The database demonstrates:
     - Primary keys
@@ -109,4 +111,54 @@ CREATE TABLE products (
     inventory_quantity INTEGER NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+);
+
+/*
+=========================================================
+5. ORDERS
+=========================================================
+Represents a customer's order.
+One customer can have many orders.
+*/
+
+CREATE TABLE orders (
+    order_id SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL,
+    shipping_address_id INTEGER,
+    order_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    shipping_cost NUMERIC(10, 2) NOT NULL DEFAULT 0,
+
+);
+
+/*
+=========================================================
+6. ORDER ITEMS
+=========================================================
+Connects orders and products.
+This creates a many-to-many relationship:
+
+    orders <----> products
+
+An order can contain multiple products.
+A product can appear in many orders.
+unit_price is stored separately from products.price
+because the price at the time of purchase must be preserved.
+
+Example:
+
+Product price today:
+    $50
+Customer bought it last month:
+    $40
+
+The order should continue to show $40.
+*/
+
+CREATE TABLE order_items (
+    order_item_id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    unit_price NUMERIC(10, 2) NOT NULL,
 );
