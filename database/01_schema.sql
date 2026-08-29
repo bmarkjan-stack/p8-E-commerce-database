@@ -15,6 +15,9 @@ Main entities:
     products
     orders
     order_items
+    payments
+    reviews
+
 
 The database demonstrates:
     - Primary keys
@@ -161,4 +164,42 @@ CREATE TABLE order_items (
     product_id INTEGER NOT NULL,
     quantity INTEGER NOT NULL,
     unit_price NUMERIC(10, 2) NOT NULL,
+);
+
+/*
+=========================================================
+7. PAYMENTS
+=========================================================
+Stores payment information for orders.
+One order can have one payment in this simplified
+e-commerce system.
+*/
+
+CREATE TABLE payments (
+    payment_id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL UNIQUE,
+    payment_method VARCHAR(30) NOT NULL,
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    amount NUMERIC(10, 2) NOT NULL,
+    paid_at TIMESTAMP,
+    transaction_reference VARCHAR(100) UNIQUE,
+);
+
+
+/*
+=========================================================
+8. REVIEWS
+=========================================================
+Customers can review products.
+A customer can review a product only once.
+*/
+
+CREATE TABLE reviews (
+    review_id SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    rating INTEGER NOT NULL,
+    review_title VARCHAR(150),
+    review_text TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 );
