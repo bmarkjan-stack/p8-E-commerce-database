@@ -47,8 +47,9 @@ CREATE TABLE customers (
     phone VARCHAR(30),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT customers_email_lowercase
+        CHECK (email = LOWER(email))
 );
-
 
 /*
 =========================================================
@@ -74,6 +75,12 @@ CREATE TABLE addresses (
     postal_code VARCHAR(20),
     country VARCHAR(100) NOT NULL,
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT fk_addresses_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES customers(customer_id)
+        ON DELETE CASCADE,
+    CONSTRAINT addresses_type_check
+        CHECK (address_type IN ('billing', 'shipping'))
 );
 
 /*
@@ -94,7 +101,6 @@ CREATE TABLE categories (
     description TEXT
 );
 
-
 /*
 =========================================================
 4. PRODUCTS
@@ -114,6 +120,14 @@ CREATE TABLE products (
     inventory_quantity INTEGER NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_products_category
+        FOREIGN KEY (category_id)
+        REFERENCES categories(category_id)
+        ON DELETE RESTRICT,
+    CONSTRAINT products_price_check
+        CHECK (price >= 0),
+    CONSTRAINT products_inventory_check
+        CHECK (inventory_quantity >= 0)
 );
 
 /*
@@ -131,7 +145,26 @@ CREATE TABLE orders (
     order_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     shipping_cost NUMERIC(10, 2) NOT NULL DEFAULT 0,
-
+    CONSTRAINT fk_orders_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES customers(customer_id)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_orders_shipping_address
+        FOREIGN KEY (shipping_address_id)
+        REFERENCES addresses(address_id)
+        ON DELETE SET NULL,
+    CONSTRAINT orders_status_check
+        CHECK (
+            status IN (
+                'pending',
+                'processing',
+                'shipped',
+                'delivered',
+                'cancelled'
+            )
+        ),
+    CONSTRAINT orders_shipping_cost_check
+        CHECK (shipping_cost >= 0)
 );
 
 /*
@@ -149,7 +182,6 @@ unit_price is stored separately from products.price
 because the price at the time of purchase must be preserved.
 
 Example:
-
 Product price today:
     $50
 Customer bought it last month:
@@ -164,6 +196,20 @@ CREATE TABLE order_items (
     product_id INTEGER NOT NULL,
     quantity INTEGER NOT NULL,
     unit_price NUMERIC(10, 2) NOT NULL,
+    CONSTRAINT fk_order_items_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(order_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_order_items_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(product_id)
+        ON DELETE RESTRICT,
+    CONSTRAINT order_items_quantity_check
+        CHECK (quantity > 0),
+    CONSTRAINT order_items_unit_price_check
+        CHECK (unit_price >= 0),
+    CONSTRAINT unique_order_product
+        UNIQUE (order_id, product_id)
 );
 
 /*
@@ -183,8 +229,32 @@ CREATE TABLE payments (
     amount NUMERIC(10, 2) NOT NULL,
     paid_at TIMESTAMP,
     transaction_reference VARCHAR(100) UNIQUE,
+    CONSTRAINT fk_payments_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(order_id)
+        ON DELETE CASCADE,
+    CONSTRAINT payments_method_check
+        CHECK (
+            payment_method IN (
+                'credit_card',
+                'debit_card',
+                'paypal',
+                'bank_transfer',
+                'cash_on_delivery'
+            )
+        ),
+    CONSTRAINT payments_status_check
+        CHECK (
+            payment_status IN (
+                'pending',
+                'completed',
+                'failed',
+                'refunded'
+            )
+        ),
+    CONSTRAINT payments_amount_check
+        CHECK (amount >= 0)
 );
-
 
 /*
 =========================================================
@@ -202,4 +272,16 @@ CREATE TABLE reviews (
     review_title VARCHAR(150),
     review_text TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_reviews_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES customers(customer_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_reviews_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(product_id)
+        ON DELETE CASCADE,
+    CONSTRAINT reviews_rating_check
+        CHECK (rating BETWEEN 1 AND 5),
+    CONSTRAINT unique_customer_product_review
+        UNIQUE (customer_id, product_id)
 );
