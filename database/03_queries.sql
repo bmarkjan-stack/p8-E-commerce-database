@@ -548,3 +548,44 @@ JOIN reviews r
 GROUP BY p.product_id, p.product_name
 HAVING AVG(r.rating) >= 4
 ORDER BY average_rating DESC;
+
+/*
+=========================================================
+20. PAYMENT METHOD USAGE
+=========================================================
+*/
+
+SELECT
+    payment_method,
+    COUNT(*) AS number_of_payments,
+    ROUND(
+        SUM(amount),
+        2
+    ) AS total_payment_amount
+FROM payments
+WHERE payment_status = 'completed'
+GROUP BY payment_method
+ORDER BY total_payment_amount DESC;
+
+/*
+=========================================================
+21. DATABASE INDEX INFORMATION
+=========================================================
+PostgreSQL-specific query that allows you to inspect
+indexes created for this project.
+=========================================================
+*/
+
+SELECT
+    tablename,
+    indexname,
+    indexdef
+FROM pg_indexes
+WHERE schemaname = 'public'
+ORDER BY tablename, indexname;
+
+/*
+=========================================================
+END OF QUERY COLLECTION
+=========================================================
+*/
