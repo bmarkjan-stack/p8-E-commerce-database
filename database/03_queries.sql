@@ -223,3 +223,193 @@ GROUP BY
     c.first_name,
     c.last_name
 ORDER BY order_count DESC;
+
+/*
+=========================================================
+9. BEST-SELLING PRODUCTS
+=========================================================
+Ranks products by total quantity sold.
+Cancelled orders are excluded.
+*/
+
+SELECT
+    p.product_id,
+    p.product_name,
+    SUM(oi.quantity) AS units_sold,
+    ROUND(
+        SUM(oi.quantity * oi.unit_price),
+        2
+    ) AS revenue
+FROM products p
+JOIN order_items oi
+    ON p.product_id = oi.product_id
+JOIN orders o
+    ON oi.order_id = o.order_id
+WHERE o.status <> 'cancelled'
+GROUP BY
+    p.product_id,
+    p.product_name
+ORDER BY units_sold DESC;
+
+/*
+=========================================================
+10. CUSTOMERS WITH THE HIGHEST SPENDING
+=========================================================
+Demonstrates:
+    - Multiple JOINs
+    - SUM
+    - GROUP BY
+    - ORDER BY
+=========================================================
+*/
+
+SELECT
+    c.customer_id,
+    CONCAT(c.first_name, ' ', c.last_name)
+        AS customer_name,
+    COUNT(DISTINCT o.order_id)
+        AS total_orders,
+    ROUND(
+        SUM(oi.quantity * oi.unit_price),
+        2
+    ) AS total_spent
+FROM customers c
+JOIN orders o
+    ON c.customer_id = o.customer_id
+JOIN order_items oi
+    ON o.order_id = oi.order_id
+WHERE o.status <> 'cancelled'
+GROUP BY
+    c.customer_id,
+    c.first_name,
+    c.last_name
+ORDER BY total_spent DESC;
+
+/*
+=========================================================
+11. MOST POPULAR CATEGORIES
+=========================================================
+Ranks categories based on units sold.
+*/
+
+SELECT
+    c.category_id,
+    c.category_name,
+    SUM(oi.quantity)
+        AS units_sold,
+    ROUND(
+        SUM(oi.quantity * oi.unit_price),
+        2
+    ) AS revenue
+FROM categories c
+JOIN products p
+    ON c.category_id = p.category_id
+JOIN order_items oi
+    ON p.product_id = oi.product_id
+JOIN orders o
+    ON oi.order_id = o.order_id
+WHERE o.status <> 'cancelled'
+GROUP BY
+    c.category_id,
+    c.category_name
+ORDER BY units_sold DESC;
+
+/*
+=========================================================
+12. CUSTOMER SPENDING ABOVE THE AVERAGE
+=========================================================
+Demonstrates a subquery.
+First calculates customer spending.
+Then compares each customer's spending against
+the average customer spending.
+=========================================================
+*/
+
+WITH customer_spending AS (
+    SELECT
+        c.customer_id,
+        CONCAT(
+            c.first_name,
+            ' ',
+            c.last_name
+        ) AS customer_name,
+        SUM(
+            oi.quantity * oi.unit_price
+        ) AS total_spent
+    FROM customers c
+    JOIN orders o
+        ON c.customer_id = o.customer_id
+    JOIN order_items oi
+        ON o.order_id = oi.order_id
+    WHERE o.status <> 'cancelled'
+    GROUP BY
+        c.customer_id,
+        c.first_name,
+        c.last_name
+)
+SELECT
+    customer_id,
+    customer_name,
+    ROUND(total_spent, 2)
+        AS total_spent
+FROM customer_spending
+WHERE total_spent > (
+    SELECT AVG(total_spent)
+    FROM customer_spending
+)
+ORDER BY total_spent DESC;
+
+/*
+=========================================================
+13. PRODUCTS WITH SALES ABOVE THE PRODUCT AVERAGE
+=========================================================
+Uses a subquery to determine the average product
+revenue.
+=========================================================
+*/
+
+WITH product_sales AS (
+    SELECT
+        p.product_id,
+        p.product_name,
+        SUM(
+            oi.quantity * oi.unit_price
+        ) AS revenue
+    FROM products p
+    JOIN order_items oi
+        ON p.product_id = oi.product_id
+    JOIN orders o
+        ON oi.order_id = o.order_id
+    WHERE o.status <> 'cancelled'
+    GROUP BY
+        p.product_id,
+        p.product_name
+)
+SELECT
+    product_id,
+    product_name,
+    ROUND(revenue, 2)
+        AS revenue
+FROM product_sales
+WHERE revenue > (
+    SELECT AVG(revenue)
+    FROM product_sales
+)
+ORDER BY revenue DESC;
+
+/*
+=========================================================
+14. MONTHLY ORDER COUNT
+=========================================================
+*/
+
+SELECT
+    DATE_TRUNC(
+        'month',
+        order_date
+    )::DATE AS month,
+    COUNT(*) AS number_of_orders
+FROM orders
+WHERE status <> 'cancelled'
+GROUP BY DATE_TRUNC('month', order_date)
+ORDER BY month;
