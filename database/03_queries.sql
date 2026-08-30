@@ -413,3 +413,47 @@ FROM orders
 WHERE status <> 'cancelled'
 GROUP BY DATE_TRUNC('month', order_date)
 ORDER BY month;
+
+/*
+=========================================================
+15. LOW INVENTORY PRODUCTS
+=========================================================
+Shows products with fewer than 10 units available.
+*/
+
+SELECT
+    p.product_id,
+    p.product_name,
+    c.category_name,
+    p.inventory_quantity
+FROM products p
+JOIN categories c
+    ON p.category_id = c.category_id
+WHERE p.inventory_quantity < 10
+ORDER BY p.inventory_quantity ASC;
+
+/*
+=========================================================
+16. LOW INVENTORY REPORT
+=========================================================
+A practical business report.
+Products with:
+    0-4 units  = Critical
+    5-9 units  = Low
+    10+ units  = Normal
+=========================================================
+*/
+
+SELECT
+    product_id,
+    product_name,
+    inventory_quantity,
+    CASE
+        WHEN inventory_quantity <= 4
+            THEN 'Critical'
+        WHEN inventory_quantity <= 9
+            THEN 'Low'
+        ELSE 'Normal'
+    END AS inventory_status
+FROM products
+ORDER BY inventory_quantity ASC;
