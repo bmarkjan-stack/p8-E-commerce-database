@@ -51,7 +51,6 @@ VALUES
         'USA',
         TRUE
     ),
-
     (
         2,
         'shipping',
@@ -62,7 +61,6 @@ VALUES
         'Philippines',
         TRUE
     ),
-
     (
         3,
         'shipping',
@@ -73,7 +71,6 @@ VALUES
         'USA',
         TRUE
     ),
-
     (
         4,
         'shipping',
@@ -84,7 +81,6 @@ VALUES
         'USA',
         TRUE
     ),
-
     (
         5,
         'shipping',
@@ -95,7 +91,6 @@ VALUES
         'USA',
         TRUE
     ),
-
     (
         6,
         'shipping',
@@ -106,3 +101,132 @@ VALUES
         'USA',
         TRUE
     );
+
+/*
+=========================================================
+3. CATEGORIES
+=========================================================
+*/
+
+INSERT INTO categories
+    (category_name, description)
+VALUES
+    ('Electronics', 'Electronic devices and accessories'),
+    ('Clothing', 'Clothing and apparel'),
+    ('Home & Kitchen', 'Products for home and kitchen'),
+    ('Books', 'Physical books and educational materials'),
+    ('Sports', 'Sports and fitness equipment');
+
+/*
+=========================================================
+4. PRODUCTS
+=========================================================
+*/
+
+INSERT INTO products
+    (
+        category_id,
+        product_name,
+        description,
+        sku,
+        price,
+        inventory_quantity
+    )
+VALUES
+    (
+        1,
+        'Wireless Headphones',
+        'Noise-cancelling wireless headphones',
+        'ELEC-001',
+        89.99,
+        25
+    ),
+    (
+        1,
+        'Mechanical Keyboard',
+        'RGB mechanical keyboard for computers',
+        'ELEC-002',
+        74.99,
+        8
+    ),
+    (
+        1,
+        'USB-C Hub',
+        'Multi-port USB-C adapter',
+        'ELEC-003',
+        39.99,
+        3
+    ),
+    (
+        2,
+        'Classic T-Shirt',
+        'Cotton casual t-shirt',
+        'CLTH-001',
+        24.99,
+        50
+    ),
+    (
+        2,
+        'Denim Jacket',
+        'Classic blue denim jacket',
+        'CLTH-002',
+        79.99,
+        12
+    ),
+    (
+        3,
+        'Coffee Maker',
+        'Automatic drip coffee maker',
+        'HOME-001',
+        59.99,
+        15
+    ),
+    (
+        3,
+        'Stainless Steel Pan',
+        '12-inch stainless steel frying pan',
+        'HOME-002',
+        44.99,
+        6
+    ),
+    (
+        4,
+        'SQL Fundamentals',
+        'Introduction to relational databases',
+        'BOOK-001',
+        34.99,
+        20
+    ),
+    (
+        4,
+        'Python Programming',
+        'Beginner Python programming guide',
+        'BOOK-002',
+        39.99,
+        18
+    ),
+    (
+        5,
+        'Yoga Mat',
+        'Non-slip exercise and yoga mat',
+        'SPRT-001',
+        29.99,
+        2
+    ),
+    (
+        5,
+        'Dumbbell Set',
+        'Adjustable dumbbell exercise set',
+        'SPRT-002',
+        99.99,
+        5
+    ),
+    (
+        3,
+        'Electric Kettle',
+        'Fast-boiling electric kettle',
+        'HOME-003',
+        34.99,
+        10
+    );
+
