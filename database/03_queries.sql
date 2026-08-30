@@ -457,3 +457,46 @@ SELECT
     END AS inventory_status
 FROM products
 ORDER BY inventory_quantity ASC;
+
+/*
+=========================================================
+8. PRODUCTS THAT HAVE NEVER BEEN PURCHASED
+=========================================================
+Uses LEFT JOIN.
+If no matching order_items exist, the product has
+never been purchased.
+*/
+
+SELECT
+    p.product_id,
+    p.product_name,
+    p.price,
+    p.inventory_quantity
+FROM products p
+LEFT JOIN order_items oi
+    ON p.product_id = oi.product_id
+WHERE oi.product_id IS NULL
+ORDER BY p.product_name;
+
+/*
+=========================================================
+9. PRODUCTS THAT HAVE NEVER BEEN PURCHASED
+=========================================================
+Alternative solution using NOT EXISTS.
+This demonstrates a subquery.
+*/
+
+SELECT
+    p.product_id,
+    p.product_name,
+    p.price
+FROM products p
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM order_items oi
+    JOIN orders o
+        ON oi.order_id = o.order_id
+    WHERE oi.product_id = p.product_id
+      AND o.status <> 'cancelled'
+)
+ORDER BY p.product_name;
