@@ -382,3 +382,180 @@ VALUES
     /* Order 12 */
     (12, 1, 1, 89.99),
     (12, 12, 1, 34.99);
+
+/*
+=========================================================
+7. PAYMENTS
+=========================================================
+*/
+
+INSERT INTO payments
+    (
+        order_id,
+        payment_method,
+        payment_status,
+        amount,
+        paid_at,
+        transaction_reference
+    )
+VALUES
+    (
+        1,
+        'credit_card',
+        'completed',
+        212.97,
+        '2026-01-10 10:32:00',
+        'TXN-0001'
+    ),
+    (
+        2,
+        'paypal',
+        'completed',
+        139.98,
+        '2026-01-15 14:22:00',
+        'TXN-0002'
+    ),
+    (
+        3,
+        'credit_card',
+        'completed',
+        162.47,
+        '2026-02-05 09:17:00',
+        'TXN-0003'
+    ),
+    (
+        4,
+        'debit_card',
+        'completed',
+        127.98,
+        '2026-02-20 16:47:00',
+        'TXN-0004'
+    ),
+    (
+        5,
+        'credit_card',
+        'completed',
+        168.97,
+        '2026-03-03 11:02:00',
+        'TXN-0005'
+    ),
+    (
+        6,
+        'paypal',
+        'completed',
+        141.98,
+        '2026-03-18 13:27:00',
+        'TXN-0006'
+    ),
+    (
+        7,
+        'credit_card',
+        'completed',
+        134.96,
+        '2026-04-02 15:12:00',
+        'TXN-0007'
+    ),
+    (
+        8,
+        'debit_card',
+        'completed',
+        109.97,
+        '2026-04-25 12:42:00',
+        'TXN-0008'
+    ),
+    (
+        9,
+        'credit_card',
+        'completed',
+        184.97,
+        '2026-05-08 17:32:00',
+        'TXN-0009'
+    ),
+    (
+        10,
+        'credit_card',
+        'refunded',
+        108.99,
+        '2026-05-21 10:02:00',
+        'TXN-0010'
+    ),
+    (
+        11,
+        'paypal',
+        'completed',
+        116.98,
+        '2026-06-11 14:02:00',
+        'TXN-0011'
+    ),
+    (
+        12,
+        'credit_card',
+        'completed',
+        133.49,
+        '2026-06-25 18:12:00',
+        'TXN-0012'
+    );
+
+/*
+=========================================================
+8. REVIEWS
+=========================================================
+*/
+
+INSERT INTO reviews
+    (
+        customer_id,
+        product_id,
+        rating,
+        review_title,
+        review_text
+    )
+VALUES
+    (
+        1,
+        1,
+        5,
+        'Excellent headphones',
+        'Great sound quality and comfortable to wear.'
+    ),
+    (
+        2,
+        6,
+        4,
+        'Good coffee maker',
+        'Works well and is easy to use.'
+    ),
+    (
+        3,
+        2,
+        5,
+        'Great keyboard',
+        'Very comfortable for programming.'
+    ),
+    (
+        4,
+        10,
+        4,
+        'Good yoga mat',
+        'Provides good grip during workouts.'
+    ),
+    (
+        5,
+        5,
+        5,
+        'Great jacket',
+        'Good quality denim and fits well.'
+    ),
+    (
+        6,
+        12,
+        4,
+        'Useful kettle',
+        'Boils water quickly.'
+    );
+
+/*
+=========================================================
+SEED DATA COMPLETE
+=========================================================
+*/
