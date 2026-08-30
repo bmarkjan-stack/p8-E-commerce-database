@@ -497,6 +497,54 @@ WHERE NOT EXISTS (
     JOIN orders o
         ON oi.order_id = o.order_id
     WHERE oi.product_id = p.product_id
-      AND o.status <> 'cancelled'
+        AND o.status <> 'cancelled'
 )
 ORDER BY p.product_name;
+
+/*
+=========================================================
+14. PRODUCTS WITH THEIR AVERAGE REVIEW RATING
+=========================================================
+LEFT JOIN is used so products without reviews are
+also displayed.
+*/
+
+SELECT
+    p.product_id,
+    p.product_name,
+    COALESCE(
+        ROUND(AVG(r.rating), 2),
+        0
+    ) AS average_rating,
+    COUNT(r.review_id)
+        AS review_count
+FROM products p
+LEFT JOIN reviews r
+    ON p.product_id = r.product_id
+GROUP BY
+    p.product_id,
+    p.product_name
+ORDER BY average_rating DESC;
+
+/*
+=========================================================
+15. TOP-RATED PRODUCTS
+=========================================================
+Products must have at least one review.
+HAVING filters groups after aggregation.
+*/
+
+SELECT
+    p.product_name,
+    ROUND(
+        AVG(r.rating),
+        2
+    ) AS average_rating,
+    COUNT(r.review_id)
+        AS review_count
+FROM products p
+JOIN reviews r
+    ON p.product_id = r.product_id
+GROUP BY p.product_id, p.product_name
+HAVING AVG(r.rating) >= 4
+ORDER BY average_rating DESC;
