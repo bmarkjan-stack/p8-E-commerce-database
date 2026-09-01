@@ -460,7 +460,7 @@ ORDER BY inventory_quantity ASC;
 
 /*
 =========================================================
-8. PRODUCTS THAT HAVE NEVER BEEN PURCHASED
+17. PRODUCTS THAT HAVE NEVER BEEN PURCHASED
 =========================================================
 Uses LEFT JOIN.
 If no matching order_items exist, the product has
@@ -480,7 +480,7 @@ ORDER BY p.product_name;
 
 /*
 =========================================================
-9. PRODUCTS THAT HAVE NEVER BEEN PURCHASED
+18. PRODUCTS THAT HAVE NEVER BEEN PURCHASED
 =========================================================
 Alternative solution using NOT EXISTS.
 This demonstrates a subquery.
@@ -503,7 +503,7 @@ ORDER BY p.product_name;
 
 /*
 =========================================================
-14. PRODUCTS WITH THEIR AVERAGE REVIEW RATING
+19. PRODUCTS WITH THEIR AVERAGE REVIEW RATING
 =========================================================
 LEFT JOIN is used so products without reviews are
 also displayed.
@@ -528,7 +528,7 @@ ORDER BY average_rating DESC;
 
 /*
 =========================================================
-15. TOP-RATED PRODUCTS
+20. TOP-RATED PRODUCTS
 =========================================================
 Products must have at least one review.
 HAVING filters groups after aggregation.
@@ -551,7 +551,7 @@ ORDER BY average_rating DESC;
 
 /*
 =========================================================
-20. PAYMENT METHOD USAGE
+21. PAYMENT METHOD USAGE
 =========================================================
 */
 
@@ -569,7 +569,7 @@ ORDER BY total_payment_amount DESC;
 
 /*
 =========================================================
-21. DATABASE INDEX INFORMATION
+22. DATABASE INDEX INFORMATION
 =========================================================
 PostgreSQL-specific query that allows you to inspect
 indexes created for this project.
