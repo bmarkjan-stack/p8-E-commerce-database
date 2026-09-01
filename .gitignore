@@ -1,0 +1,23 @@
+```gitignore
+# Environment variables
+.env
+
+# PostgreSQL local files
+*.dump
+*.backup
+
+# Database exports
+*.sql.gz
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.log
+```
