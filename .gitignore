@@ -1,4 +1,3 @@
-```gitignore
 # Environment variables
 .env
 
@@ -21,3 +20,12 @@ Thumbs.db
 *.tmp
 *.log
 ```
+
+# Node / backend
+backend/node_modules/
+backend/.env
+backend/coverage/
+npm-debug.log*
+
+# Docker
+pgdata/
