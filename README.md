@@ -1,4 +1,3 @@
-````markdown
 # E-Commerce Database
 
 A relational database project that models the backend data structure
@@ -609,5 +608,4 @@ SELECT * FROM users;
 the project focuses on relationships, data integrity, normalization,
 analytics, joins, aggregation, subqueries, constraints, and indexing.
 
-```
-```
+---
