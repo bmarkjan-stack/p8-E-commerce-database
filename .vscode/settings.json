@@ -5,9 +5,12 @@
         "ELEC",
         "indexdef",
         "pgdata",
+        "plpgsql",
+        "ROWTYPE",
         "schemaname",
         "SPRT",
         "TRUNC",
+        "unpurchased",
         "VARCHAR"
     ]
 }
