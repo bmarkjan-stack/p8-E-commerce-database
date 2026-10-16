@@ -11,6 +11,7 @@
         "ROWTYPE",
         "schemaname",
         "SPRT",
+        "Supabase",
         "TRUNC",
         "unpurchased",
         "VARCHAR"
