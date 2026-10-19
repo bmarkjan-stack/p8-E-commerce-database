@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Store Analytics — E-Commerce Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1621; --panel:#161f2e; --panel-2:#1c273a; --line:#26334a;
+    --ink:#eaf0fa; --ink-dim:#94a3bb; --teal:#2dd4bf; --amber:#f5b942; --coral:#f26d6d;
+    --violet:#8b8ff0; --good:#4ade80;
+    font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh}
+  header{padding:28px 32px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px}
+  header h1{margin:0;font-size:22px;font-weight:650;letter-spacing:-0.01em}
+  header p{margin:4px 0 0;color:var(--ink-dim);font-size:13.5px}
+  #status{font-size:12.5px;color:var(--ink-dim);text-align:right}
+  #status b{color:var(--amber)}
+  main{padding:24px 32px 48px;max-width:1280px;margin:0 auto}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .kpi .label{font-size:12px;color:var(--ink-dim)}
+  .kpi .value{font-size:26px;font-weight:650;margin-top:6px;letter-spacing:-0.02em}
+  .kpi.warn .value{color:var(--coral)}
+
+  .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px}
+  @media (max-width:880px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+  .card h2{margin:0 0 4px;font-size:14.5px;font-weight:600}
+  .card .sub{margin:0 0 14px;font-size:12px;color:var(--ink-dim)}
+  .card canvas{max-height:260px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--ink-dim);font-weight:500;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;padding:6px 8px;border-bottom:1px solid var(--line)}
+  td{padding:8px 8px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+  .pill.low{background:rgba(242,109,109,.15);color:var(--coral)}
+  .pill.ok{background:rgba(74,222,128,.15);color:var(--good)}
+
+  #login{position:fixed;inset:0;background:rgba(6,9,15,.72);display:flex;align-items:center;justify-content:center;z-index:20}
+  #login .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px 28px;width:320px}
+  #login h2{margin:0 0 4px;font-size:16px}
+  #login p{margin:0 0 16px;color:var(--ink-dim);font-size:12.5px}
+  #login input{width:100%;padding:9px 10px;margin-bottom:10px;border-radius:7px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);font-size:13.5px}
+  #login button{width:100%;padding:10px;border:none;border-radius:7px;background:var(--teal);color:#04231f;font-weight:650;cursor:pointer;font-size:13.5px}
+  #login .err{color:var(--coral);font-size:12px;min-height:16px;margin-top:8px}
+  #login .skip{background:none;border:none;color:var(--ink-dim);font-size:12px;margin-top:10px;cursor:pointer;text-decoration:underline}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="box">
+    <h2>Admin sign-in</h2>
+    <p>Sign in with an admin account to pull live data from the API. Use the seeded admin (see <code>database/02_seed.sql</code>) or continue with sample data.</p>
+    <input id="email" type="email" placeholder="admin@example.com" autocomplete="username">
+    <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+    <button onclick="doLogin()">Sign in</button>
+    <div class="err" id="loginErr"></div>
+    <button class="skip" onclick="skipLogin()">Continue with sample data →</button>
+  </div>
+</div>
+
+<header>
+  <div>
+    <h1>Store Analytics</h1>
+    <p>Live view of the queries in <code>database/03_queries.sql</code></p>
+  </div>
+  <div id="status">Not connected · <b>sample data</b></div>
+</header>
+
+<main>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Monthly sales</h2>
+      <p class="sub">Revenue by month, cancelled orders excluded</p>
+      <canvas id="salesChart"></canvas>
+    </div>
+    <div class="card">
+      <h2>Revenue by category</h2>
+      <p class="sub">Share of total revenue</p>
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Best-selling products</h2>
+      <p class="sub">Ranked by units sold</p>
+      <canvas id="productsChart"></canvas>
+    </div>
+    <div class="card">
+      <h2>Payment methods</h2>
+      <p class="sub">Completed payments</p>
+      <canvas id="paymentChart"></canvas>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Top customers</h2>
+      <p class="sub">By lifetime spend</p>
+      <table>
+        <thead><tr><th>Customer</th><th class="num">Orders</th><th class="num">Total spent</th></tr></thead>
+        <tbody id="customersTable"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Low inventory</h2>
+      <p class="sub">Fewer than 10 units in stock</p>
+      <table>
+        <thead><tr><th>Product</th><th>SKU</th><th class="num">Stock</th></tr></thead>
+        <tbody id="inventoryTable"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+const API = (window.location.origin.includes('file') ? 'http://localhost:4000' : window.location.origin.replace(/:\d+$/, ':4000')) + '/api';
+let token = null;
+let charts = {};
+
+// ---- sample data (mirrors database/02_seed.sql so the dashboard
+// looks right the moment you open this file, before the API is up) ----
+const SAMPLE = {
+  kpis: { total_revenue: 4821.37, total_orders: 18, active_customers: 12, low_stock_count: 3 },
+  monthly: [
+    { sales_month: '2025-11-01', total_sales: 612.40 },
+    { sales_month: '2025-12-01', total_sales: 1189.75 },
+    { sales_month: '2026-01-01', total_sales: 940.20 },
+    { sales_month: '2026-02-01', total_sales: 1305.60 },
+    { sales_month: '2026-03-01', total_sales: 773.42 },
+  ],
+  topProducts: [
+    { product_name: 'Wireless Headphones', units_sold: 34 },
+    { product_name: 'Classic T-Shirt', units_sold: 29 },
+    { product_name: 'Coffee Maker', units_sold: 21 },
+    { product_name: 'Mechanical Keyboard', units_sold: 17 },
+    { product_name: 'Denim Jacket', units_sold: 12 },
+  ],
+  categoryRevenue: [
+    { category_name: 'Electronics', revenue: 2140.10 },
+    { category_name: 'Clothing', revenue: 980.55 },
+    { category_name: 'Home & Kitchen', revenue: 860.30 },
+    { category_name: 'Sports', revenue: 520.22 },
+    { category_name: 'Books', revenue: 320.20 },
+  ],
+  paymentMethods: [
+    { payment_method: 'credit_card', payment_count: 9 },
+    { payment_method: 'paypal', payment_count: 5 },
+    { payment_method: 'debit_card', payment_count: 3 },
+    { payment_method: 'bank_transfer', payment_count: 1 },
+  ],
+  topCustomers: [
+    { customer_name: 'Ava Thompson', order_count: 4, total_spent: 612.40 },
+    { customer_name: 'Liam Ortiz', order_count: 3, total_spent: 489.15 },
+    { customer_name: 'Noor Hassan', order_count: 3, total_spent: 410.60 },
+    { customer_name: 'Mia Chen', order_count: 2, total_spent: 355.90 },
+  ],
+  lowInventory: [
+    { product_name: 'USB-C Hub', sku: 'ELEC-003', inventory_quantity: 3 },
+    { product_name: 'Mechanical Keyboard', sku: 'ELEC-002', inventory_quantity: 8 },
+    { product_name: 'Denim Jacket', sku: 'CLTH-002', inventory_quantity: 9 },
+  ],
+};
+
+const palette = ['#2dd4bf','#f5b942','#8b8ff0','#f26d6d','#4ade80','#60a5fa'];
+Chart.defaults.color = '#94a3bb';
+Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+Chart.defaults.borderColor = '#26334a';
+
+async function doLogin(){
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  try{
+    const res = await fetch(`${API}/auth/login`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Login failed');
+    if(data.customer.role !== 'admin') throw new Error('This account is not an admin');
+    token = data.token;
+    document.getElementById('login').style.display='none';
+    document.getElementById('status').innerHTML = `Connected as <b>${data.customer.email}</b> · live data`;
+    loadLive();
+  }catch(e){
+    errEl.textContent = e.message + ' — falling back to sample data is also fine.';
+  }
+}
+
+function skipLogin(){
+  document.getElementById('login').style.display='none';
+  renderAll(SAMPLE);
+}
+
+async function loadLive(){
+  const headers = { Authorization: `Bearer ${token}` };
+  try{
+    const [kpis, monthly, topProducts, categoryRevenue, paymentMethods, topCustomers, lowInventory] = await Promise.all([
+      fetch(`${API}/sales/kpis`, {headers}).then(r=>r.json()),
+      fetch(`${API}/sales/monthly`, {headers}).then(r=>r.json()),
+      fetch(`${API}/sales/top-products?limit=5`, {headers}).then(r=>r.json()),
+      fetch(`${API}/sales/category-revenue`, {headers}).then(r=>r.json()),
+      fetch(`${API}/sales/payment-methods`, {headers}).then(r=>r.json()),
+      fetch(`${API}/sales/top-customers?limit=5`, {headers}).then(r=>r.json()),
+      fetch(`${API}/sales/low-inventory`, {headers}).then(r=>r.json()),
+    ]);
+    renderAll({ kpis, monthly, topProducts, categoryRevenue, paymentMethods, topCustomers, lowInventory });
+  }catch(e){
+    document.getElementById('status').textContent = 'API unreachable · showing sample data';
+    renderAll(SAMPLE);
+  }
+}
+
+function money(n){ return '$' + Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
+function monthLabel(d){ return new Date(d).toLocaleDateString(undefined,{month:'short', year:'2-digit'}); }
+
+function renderAll(d){
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="label">Total revenue</div><div class="value">${money(d.kpis.total_revenue)}</div></div>
+    <div class="kpi"><div class="label">Orders</div><div class="value">${d.kpis.total_orders}</div></div>
+    <div class="kpi"><div class="label">Active customers</div><div class="value">${d.kpis.active_customers}</div></div>
+    <div class="kpi ${d.kpis.low_stock_count>0?'warn':''}"><div class="label">Low-stock products</div><div class="value">${d.kpis.low_stock_count}</div></div>
+  `;
+
+  mkChart('salesChart','line',{
+    labels: d.monthly.map(m=>monthLabel(m.sales_month)),
+    datasets:[{ label:'Revenue', data:d.monthly.map(m=>Number(m.total_sales)), borderColor:palette[0], backgroundColor:'rgba(45,212,191,.12)', fill:true, tension:.35, pointRadius:3 }]
+  }, { plugins:{legend:{display:false}}, scales:{ y:{ticks:{callback:v=>'$'+v}} } });
+
+  mkChart('categoryChart','doughnut',{
+    labels: d.categoryRevenue.map(c=>c.category_name),
+    datasets:[{ data:d.categoryRevenue.map(c=>Number(c.revenue)), backgroundColor:palette, borderWidth:0 }]
+  }, { plugins:{legend:{position:'right', labels:{boxWidth:10, padding:10, font:{size:11}}}} });
+
+  mkChart('productsChart','bar',{
+    labels: d.topProducts.map(p=>p.product_name),
+    datasets:[{ label:'Units sold', data:d.topProducts.map(p=>Number(p.units_sold)), backgroundColor:palette[2], borderRadius:5 }]
+  }, { indexAxis:'y', plugins:{legend:{display:false}} });
+
+  mkChart('paymentChart','bar',{
+    labels: d.paymentMethods.map(p=>p.payment_method.replace('_',' ')),
+    datasets:[{ label:'Payments', data:d.paymentMethods.map(p=>Number(p.payment_count)), backgroundColor:palette[1], borderRadius:5 }]
+  }, { plugins:{legend:{display:false}} });
+
+  document.getElementById('customersTable').innerHTML = d.topCustomers.map(c=>`
+    <tr><td>${c.customer_name}</td><td class="num">${c.order_count}</td><td class="num">${money(c.total_spent)}</td></tr>
+  `).join('') || '<tr><td colspan="3">No orders yet</td></tr>';
+
+  document.getElementById('inventoryTable').innerHTML = d.lowInventory.map(p=>`
+    <tr><td>${p.product_name}</td><td>${p.sku}</td><td class="num"><span class="pill low">${p.inventory_quantity} left</span></td></tr>
+  `).join('') || '<tr><td colspan="3"><span class="pill ok">All stocked</span></td></tr>';
+}
+
+function mkChart(id, type, data, extraOpts){
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), {
+    type, data,
+    options: Object.assign({ responsive:true, maintainAspectRatio:true }, extraOpts)
+  });
+}
+
+// Show something immediately, before login
+renderAll(SAMPLE);
+</script>
+</body>
+</html>
