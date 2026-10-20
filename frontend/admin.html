@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Orders &amp; Inventory</title>
+<style>
+  :root{ --bg:#f6f5f2; --panel:#fff; --line:#e3e0d8; --ink:#1e2019; --ink-dim:#767467; --accent:#3a4d3f;
+    font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  header .brand{font-weight:700;font-size:17px}
+  nav a{margin-left:14px;font-size:13px;color:var(--ink-dim);text-decoration:none}
+  main{max-width:1000px;margin:0 auto;padding:26px}
+  section{margin-bottom:28px}
+  h2{font-size:15px;margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th{text-align:left;padding:9px 12px;background:#f0efe9;font-size:11.5px;text-transform:uppercase;color:var(--ink-dim);letter-spacing:.03em}
+  td{padding:9px 12px;border-top:1px solid var(--line)}
+  select,button{font-size:12.5px;padding:5px 8px;border-radius:6px;border:1px solid var(--line)}
+  .pill{padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+  .pending{background:#fdf1d6;color:#8a6412}
+  .processing{background:#e1ecfb;color:#1e4e8c}
+  .shipped{background:#e4e7fb;color:#3c3c9d}
+  .delivered{background:#ddf3e4;color:#1f6b3c}
+  .cancelled{background:#fbe1e1;color:#a2312c}
+  .low{color:#a2312c;font-weight:600}
+  #gate{max-width:320px;margin:80px auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px}
+  #gate input{width:100%;padding:9px 10px;margin-bottom:10px;border:1px solid var(--line);border-radius:7px}
+  #gate button{width:100%;background:var(--accent);color:#fff;border:none;padding:10px;border-radius:7px;font-weight:650;cursor:pointer}
+  #gate p{font-size:12px;color:var(--ink-dim)}
+  #app{display:none}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h2 style="margin-top:0">Admin sign-in</h2>
+  <p>Use the seeded admin account (the first customer inserted by <code>02_seed.sql</code> is promoted to admin by <code>04_schema_extensions.sql</code>).</p>
+  <input id="email" type="email" placeholder="admin@example.com">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Sign in</button>
+  <p id="gateErr" style="color:#a2312c"></p>
+</div>
+
+<div id="app">
+  <header>
+    <div class="brand">Admin Console</div>
+    <nav><a href="dashboard.html">Analytics</a><a href="storefront.html">Storefront</a><a href="#" onclick="signOut()">Sign out</a></nav>
+  </header>
+  <main>
+    <section>
+      <h2>Recent orders</h2>
+      <table>
+        <thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Shipping</th><th></th></tr></thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Low inventory</h2>
+      <table>
+        <thead><tr><th>Product</th><th>SKU</th><th>Stock</th></tr></thead>
+        <tbody id="inventoryBody"></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script>
+const API = (window.location.origin.includes('file') ? 'http://localhost:4000' : window.location.origin.replace(/:\d+$/, ':4000')) + '/api';
+let token = null;
+
+async function login(){
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const res = await fetch(`${API}/auth/login`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email,password})
+  });
+  const data = await res.json();
+  if(!res.ok){ document.getElementById('gateErr').textContent = data.error; return; }
+  if(data.customer.role !== 'admin'){ document.getElementById('gateErr').textContent = 'This account is not an admin.'; return; }
+  token = data.token;
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').style.display='block';
+  loadOrders(); loadInventory();
+}
+
+function signOut(){ token = null; location.reload(); }
+
+async function loadOrders(){
+  const res = await fetch(`${API}/orders`, { headers:{ Authorization:`Bearer ${token}` } });
+  const orders = await res.json();
+  document.getElementById('ordersBody').innerHTML = orders.map(o => `
+    <tr>
+      <td>#${o.order_id}</td>
+      <td>${new Date(o.order_date).toLocaleDateString()}</td>
+      <td><span class="pill ${o.status}">${o.status}</span></td>
+      <td>$${Number(o.shipping_cost).toFixed(2)}</td>
+      <td>
+        <select onchange="updateStatus(${o.order_id}, this.value)">
+          ${['pending','processing','shipped','delivered','cancelled'].map(s =>
+            `<option value="${s}" ${s===o.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="5">No orders yet.</td></tr>';
+}
+
+async function updateStatus(orderId, status){
+  await fetch(`${API}/orders/${orderId}/status`, {
+    method:'PATCH',
+    headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+    body: JSON.stringify({ status })
+  });
+  loadOrders();
+}
+
+async function loadInventory(){
+  const res = await fetch(`${API}/sales/low-inventory`, { headers:{ Authorization:`Bearer ${token}` } });
+  const rows = await res.json();
+  document.getElementById('inventoryBody').innerHTML = rows.map(p => `
+    <tr><td>${p.product_name}</td><td>${p.sku}</td><td class="low">${p.inventory_quantity}</td></tr>
+  `).join('') || '<tr><td colspan="3">All products are well stocked.</td></tr>';
+}
+</script>
+</body>
+</html>
