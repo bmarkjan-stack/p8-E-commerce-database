@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Storefront Demo</title>
+<style>
+  :root{ --bg:#faf8f5; --ink:#20241f; --ink-dim:#6b6f66; --line:#e4e0d8; --accent:#2f5d4f; --accent-ink:#f2f7f4;
+    font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink)}
+  header{padding:18px 28px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--bg);z-index:5}
+  header .brand{font-weight:700;font-size:18px;letter-spacing:-.01em}
+  header nav{display:flex;gap:14px;align-items:center;font-size:13.5px}
+  header button{background:var(--accent);color:var(--accent-ink);border:none;border-radius:7px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:13px}
+  header .ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+  main{max-width:1080px;margin:0 auto;padding:28px}
+  .toolbar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+  .toolbar input,.toolbar select{padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:13.5px;background:#fff}
+  .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px}
+  .card .cat{font-size:11px;color:var(--ink-dim);margin-bottom:4px}
+  .card h3{margin:0 0 6px;font-size:15px}
+  .card .price{font-weight:700;margin-bottom:10px}
+  .card .stock{font-size:11.5px;color:var(--ink-dim);margin-bottom:10px}
+  .card button{width:100%;padding:9px;border:none;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-weight:600;cursor:pointer;font-size:13px}
+  .card button:disabled{background:#ccc;cursor:not-allowed}
+
+  #cartDrawer{position:fixed;top:0;right:-360px;width:340px;height:100%;background:#fff;border-left:1px solid var(--line);
+    transition:right .25s ease;padding:20px;overflow-y:auto;z-index:10}
+  #cartDrawer.open{right:0}
+  #cartDrawer h2{margin-top:0;font-size:16px}
+  .cartItem{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .cartItem button{background:none;border:none;color:#b4483f;cursor:pointer;font-size:12px}
+  #checkoutBtn{width:100%;margin-top:16px;padding:11px;border:none;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:650;cursor:pointer}
+  #overlay{position:fixed;inset:0;background:rgba(20,20,18,.35);display:none;z-index:9}
+  #overlay.open{display:block}
+
+  #authModal{position:fixed;inset:0;background:rgba(20,20,18,.45);display:none;align-items:center;justify-content:center;z-index:20}
+  #authModal.open{display:flex}
+  #authModal .box{background:#fff;border-radius:12px;padding:24px;width:300px}
+  #authModal input{width:100%;padding:9px 10px;margin-bottom:9px;border:1px solid var(--line);border-radius:7px;font-size:13.5px}
+  #authModal button{width:100%;padding:10px;border:none;border-radius:7px;background:var(--accent);color:var(--accent-ink);font-weight:650;cursor:pointer;margin-top:4px}
+  #authModal .switch{background:none;color:var(--ink-dim);text-decoration:underline;margin-top:10px;font-weight:400;font-size:12px}
+  #authModal .msg{font-size:12px;min-height:16px;margin-top:8px}
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+    padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .25s;z-index:30}
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">General Store</div>
+  <nav>
+    <span id="whoami" style="color:#6b6f66;font-size:12.5px"></span>
+    <button class="ghost" onclick="openAuth()" id="authBtn">Sign in</button>
+    <button onclick="toggleCart(true)">Cart (<span id="cartCount">0</span>)</button>
+  </nav>
+</header>
+
+<main>
+  <div class="toolbar">
+    <input id="search" placeholder="Search products…" oninput="loadProducts()">
+    <select id="categoryFilter" onchange="loadProducts()"><option value="">All categories</option></select>
+  </div>
+  <div class="products" id="products">Loading products…</div>
+</main>
+
+<div id="overlay" onclick="toggleCart(false)"></div>
+<div id="cartDrawer">
+  <h2>Your cart</h2>
+  <div id="cartItems"><p style="color:#6b6f66;font-size:13px">Cart is empty.</p></div>
+  <button id="checkoutBtn" onclick="checkout()">Checkout</button>
+</div>
+
+<div id="authModal">
+  <div class="box">
+    <h2 id="authTitle" style="margin:0 0 4px;font-size:16px">Sign in</h2>
+    <p style="margin:0 0 14px;color:#6b6f66;font-size:12px">Needed to add items to your cart and place orders.</p>
+    <div id="registerFields" style="display:none">
+      <input id="firstName" placeholder="First name">
+      <input id="lastName" placeholder="Last name">
+    </div>
+    <input id="authEmail" type="email" placeholder="Email">
+    <input id="authPassword" type="password" placeholder="Password">
+    <button onclick="submitAuth()" id="authSubmitBtn">Sign in</button>
+    <button class="switch" onclick="toggleAuthMode()" id="authSwitchBtn">Need an account? Register</button>
+    <div class="msg" id="authMsg"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = (window.location.origin.includes('file') ? 'http://localhost:4000' : window.location.origin.replace(/:\d+$/, ':4000')) + '/api';
+let token = localStorage_get('token');
+let currentUser = JSON.parse(localStorage_get('user') || 'null');
+let registerMode = false;
+let cart = { items: [] };
+
+// Plain in-memory fallback if localStorage isn't available for some reason
+function localStorage_get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function localStorage_set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+async function loadProducts(){
+  const search = document.getElementById('search').value;
+  const category = document.getElementById('categoryFilter').value;
+  const params = new URLSearchParams();
+  if(search) params.set('search', search);
+  if(category) params.set('category', category);
+  try{
+    const res = await fetch(`${API}/products?${params}`);
+    const products = await res.json();
+    renderProducts(products);
+  }catch(e){
+    document.getElementById('products').innerHTML =
+      `<p>Couldn't reach the API at <code>${API}</code>. Start the backend (see README) and reload.</p>`;
+  }
+}
+
+function renderProducts(products){
+  const wrap = document.getElementById('products');
+  if(products.length===0){ wrap.innerHTML = '<p>No products match your search.</p>'; return; }
+  wrap.innerHTML = products.map(p => `
+    <div class="card">
+      <div class="cat">${p.category_name}</div>
+      <h3>${p.product_name}</h3>
+      <div class="price">$${Number(p.price).toFixed(2)}</div>
+      <div class="stock">${p.inventory_quantity>0 ? p.inventory_quantity+' in stock' : 'Out of stock'}</div>
+      <button ${p.inventory_quantity<=0?'disabled':''} onclick="addToCart(${p.product_id})">Add to cart</button>
+    </div>
+  `).join('');
+
+  const cats = [...new Map(products.map(p=>[p.category_name,p.category_name])).keys()];
+  const sel = document.getElementById('categoryFilter');
+  if(sel.options.length<=1){
+    cats.forEach(c=>{ const o=document.createElement('option'); o.textContent=c; sel.appendChild(o); });
+  }
+}
+
+async function addToCart(productId){
+  if(!token){ openAuth(); toast('Sign in to add items to your cart'); return; }
+  await fetch(`${API}/cart/items`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+    body: JSON.stringify({ product_id: productId, quantity: 1 })
+  });
+  await refreshCart();
+  toast('Added to cart');
+}
+
+async function refreshCart(){
+  if(!token) return;
+  const res = await fetch(`${API}/cart`, { headers:{ Authorization:`Bearer ${token}` } });
+  cart = await res.json();
+  document.getElementById('cartCount').textContent = cart.items.reduce((s,i)=>s+i.quantity,0);
+  document.getElementById('cartItems').innerHTML = cart.items.length ? cart.items.map(i => `
+    <div class="cartItem">
+      <span>${i.product_name} × ${i.quantity}</span>
+      <span>$${(i.price*i.quantity).toFixed(2)} <button onclick="removeItem(${i.cart_item_id})">Remove</button></span>
+    </div>
+  `).join('') : '<p style="color:#6b6f66;font-size:13px">Cart is empty.</p>';
+}
+
+async function removeItem(cartItemId){
+  await fetch(`${API}/cart/items/${cartItemId}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } });
+  await refreshCart();
+}
+
+function toggleCart(open){
+  document.getElementById('cartDrawer').classList.toggle('open', open);
+  document.getElementById('overlay').classList.toggle('open', open);
+  if(open) refreshCart();
+}
+
+async function checkout(){
+  if(!cart.items.length){ toast('Your cart is empty'); return; }
+  const items = cart.items.map(i => ({ product_id: i.product_id, quantity: i.quantity }));
+  const res = await fetch(`${API}/orders`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+    body: JSON.stringify({ items, payment_method:'credit_card' })
+  });
+  const data = await res.json();
+  if(!res.ok){ toast(data.error || 'Checkout failed'); return; }
+  toast(`Order #${data.order_id} placed!`);
+  for(const i of cart.items){ await removeItem(i.cart_item_id); }
+  toggleCart(false);
+}
+
+function openAuth(){ document.getElementById('authModal').classList.add('open'); }
+function closeAuth(){ document.getElementById('authModal').classList.remove('open'); document.getElementById('authMsg').textContent=''; }
+
+function toggleAuthMode(){
+  registerMode = !registerMode;
+  document.getElementById('registerFields').style.display = registerMode ? 'block' : 'none';
+  document.getElementById('authTitle').textContent = registerMode ? 'Create account' : 'Sign in';
+  document.getElementById('authSubmitBtn').textContent = registerMode ? 'Register' : 'Sign in';
+  document.getElementById('authSwitchBtn').textContent = registerMode ? 'Have an account? Sign in' : 'Need an account? Register';
+}
+
+async function submitAuth(){
+  const email = document.getElementById('authEmail').value;
+  const password = document.getElementById('authPassword').value;
+  const body = registerMode
+    ? { first_name: document.getElementById('firstName').value, last_name: document.getElementById('lastName').value, email, password }
+    : { email, password };
+  const endpoint = registerMode ? 'register' : 'login';
+  const res = await fetch(`${API}/auth/${endpoint}`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if(!res.ok){ document.getElementById('authMsg').textContent = data.error; return; }
+  token = data.token; currentUser = data.customer;
+  localStorage_set('token', token); localStorage_set('user', JSON.stringify(currentUser));
+  closeAuth(); updateWhoami(); refreshCart();
+  toast(`Welcome, ${currentUser.first_name}`);
+}
+
+function updateWhoami(){
+  const el = document.getElementById('whoami');
+  const btn = document.getElementById('authBtn');
+  if(currentUser){ el.textContent = currentUser.first_name; btn.textContent = 'Sign out'; btn.onclick = signOut; }
+  else { el.textContent = ''; btn.textContent = 'Sign in'; btn.onclick = openAuth; }
+}
+
+function signOut(){
+  token = null; currentUser = null;
+  localStorage_set('token',''); localStorage_set('user','');
+  updateWhoami(); cart = { items: [] }; refreshCartUIEmpty();
+}
+function refreshCartUIEmpty(){
+  document.getElementById('cartCount').textContent = 0;
+  document.getElementById('cartItems').innerHTML = '<p style="color:#6b6f66;font-size:13px">Cart is empty.</p>';
+}
+
+updateWhoami();
+loadProducts();
+if(token) refreshCart();
+</script>
+</body>
+</html>
