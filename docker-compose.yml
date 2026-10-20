@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ecommerce_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Postgres runs every .sql file here, in filename order, ONLY
+      # the first time the volume is created. Our files are already
+      # numbered 01-07 so they run in the right order.
+      - ./database/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - ./database/03_queries.sql:/docker-entrypoint-initdb.d/03_queries.sql
+      - ./database/04_schema_extensions.sql:/docker-entrypoint-initdb.d/04_schema_extensions.sql
+      - ./database/05_views.sql:/docker-entrypoint-initdb.d/05_views.sql
+      - ./database/06_functions_and_procedures.sql:/docker-entrypoint-initdb.d/06_functions_and_procedures.sql
+      - ./database/07_triggers.sql:/docker-entrypoint-initdb.d/07_triggers.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/ecommerce_db
+      DATABASE_SSL: "false"
+      JWT_SECRET: dev-only-secret-change-me
+      JWT_EXPIRES_IN: 8h
+      PORT: 4000
+      CORS_ORIGIN: http://localhost:8080
+    ports:
+      - "4000:4000"
+
+  frontend:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:
