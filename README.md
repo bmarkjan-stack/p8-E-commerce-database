@@ -609,3 +609,31 @@ the project focuses on relationships, data integrity, normalization,
 analytics, joins, aggregation, subqueries, constraints, and indexing.
 
 ---
+
+# From Database to Full Product
+
+The database now has a working application layer on top of it:
+
+* **`database/04_schema_extensions.sql`** — product variants, shopping
+  carts, discounts/coupons, shipping tracking, and customer roles
+* **`database/05_views.sql`** — the analytical queries from
+  `03_queries.sql`, wrapped as reusable SQL views
+* **`database/06_functions_and_procedures.sql`** — `place_order()`,
+  `apply_discount_code()`, `get_customer_lifetime_value()`
+* **`database/07_triggers.sql`** — automatic, overselling-proof inventory
+  management
+* **`backend/`** — a Node/Express REST API (JWT auth, admin roles) over
+  the whole schema
+* **`frontend/`** — three browser pages that talk to the API:
+  `dashboard.html` (analytics charts), `storefront.html` (browse/cart/
+  checkout), `admin.html` (manage orders & inventory)
+* **`docker-compose.yml`** — `docker compose up` runs the database, API,
+  and frontend together
+* **`.github/workflows/ci.yml`** + **`backend/tests/`** +
+  **`database/tests/pgtap_tests.sql`** — automated tests on every push
+
+**Start here:** [`docs/IMPROVEMENTS_GUIDE.md`](docs/IMPROVEMENTS_GUIDE.md)
+walks through wiring all of this up step by step. For hosting a live,
+shareable URL instead of running locally, see
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
