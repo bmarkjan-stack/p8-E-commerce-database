@@ -138,10 +138,27 @@ function renderProducts(products){
     </div>
   `).join('');
 
-  const cats = [...new Map(products.map(p=>[p.category_name,p.category_name])).keys()];
+  const cats = [
+    ...new Map(
+      products.map(p => [
+        p.category_id,
+        {
+          id: p.category_id,
+          name: p.category_name,
+        },
+      ])
+    ).values(),
+  ];
+
   const sel = document.getElementById('categoryFilter');
-  if(sel.options.length<=1){
-    cats.forEach(c=>{ const o=document.createElement('option'); o.textContent=c; sel.appendChild(o); });
+
+  if (sel.options.length <= 1) {
+    cats.forEach(({ id, name }) => {
+      const option = document.createElement('option');
+      option.value = String(id);
+      option.textContent = name;
+      sel.appendChild(option);
+    });
   }
 }
 

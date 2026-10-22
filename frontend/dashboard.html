@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Store Analytics — E-Commerce Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="/vendor/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#0f1621; --panel:#161f2e; --panel-2:#1c273a; --line:#26334a;
@@ -205,24 +205,53 @@ function skipLogin(){
   renderAll(SAMPLE);
 }
 
-async function loadLive(){
+async function loadLive() {
   const headers = { Authorization: `Bearer ${token}` };
-  try{
-    const [kpis, monthly, topProducts, categoryRevenue, paymentMethods, topCustomers, lowInventory] = await Promise.all([
-      fetch(`${API}/sales/kpis`, {headers}).then(r=>r.json()),
-      fetch(`${API}/sales/monthly`, {headers}).then(r=>r.json()),
-      fetch(`${API}/sales/top-products?limit=5`, {headers}).then(r=>r.json()),
-      fetch(`${API}/sales/category-revenue`, {headers}).then(r=>r.json()),
-      fetch(`${API}/sales/payment-methods`, {headers}).then(r=>r.json()),
-      fetch(`${API}/sales/top-customers?limit=5`, {headers}).then(r=>r.json()),
-      fetch(`${API}/sales/low-inventory`, {headers}).then(r=>r.json()),
-    ]);
-    renderAll({ kpis, monthly, topProducts, categoryRevenue, paymentMethods, topCustomers, lowInventory });
-  }catch(e){
-    document.getElementById('status').textContent = 'API unreachable · showing sample data';
+
+  const endpoints = [
+    ['kpis', '/sales/kpis'],
+    ['monthly', '/sales/monthly'],
+    ['topProducts', '/sales/top-products?limit=5'],
+    ['categoryRevenue', '/sales/category-revenue'],
+    ['paymentMethods', '/sales/payment-methods'],
+    ['topCustomers', '/sales/top-customers?limit=5'],
+    ['lowInventory', '/sales/low-inventory'],
+  ];
+
+  try {
+    const results = await Promise.all(
+      endpoints.map(async ([name, path]) => {
+        const response = await fetch(`${API}${path}`, { headers });
+        const body = await response.text();
+        console.log(
+          `[Dashboard API] ${name}:`,
+          response.status,
+          body
+        );
+        if (!response.ok) {
+          throw new Error(
+            `${name} returned HTTP ${response.status}: ${body}`
+          );
+        }
+        try {
+          return [name, JSON.parse(body)];
+        } catch {
+          throw new Error(`${name} returned invalid JSON`);
+        }
+      })
+    );
+    const data = Object.fromEntries(results);
+    document.getElementById('status').textContent =
+      'Live data connected';
+    renderAll(data);
+  } catch (error) {
+    console.error('[Dashboard] Failed to load live data:', error);
+    document.getElementById('status').textContent =
+      `Live data unavailable: ${error.message}`;
     renderAll(SAMPLE);
   }
 }
+
 
 function money(n){ return '$' + Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}); }
 function monthLabel(d){ return new Date(d).toLocaleDateString(undefined,{month:'short', year:'2-digit'}); }
