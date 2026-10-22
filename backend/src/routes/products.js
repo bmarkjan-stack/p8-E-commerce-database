@@ -10,25 +10,40 @@ router.get('/', async (req, res) => {
   const conditions = ['p.is_active = TRUE'];
   const params = [];
 
-  if (category) {
-    params.push(category);
+  // Validate category because category_id is an integer.
+  if (category !== undefined && category !== '') {
+    if (!/^[1-9]\d*$/.test(category)) {
+      return res.status(400).json({
+        error: 'category must be a positive integer',
+      });
+    }
+
+    params.push(Number(category));
     conditions.push(`p.category_id = $${params.length}`);
   }
+
   if (search) {
     params.push(`%${search}%`);
     conditions.push(`p.product_name ILIKE $${params.length}`);
   }
 
-  const { rows } = await db.query(
-    `SELECT p.product_id, p.product_name, p.description, p.sku, p.price,
-            p.inventory_quantity, c.category_name
-     FROM products p
-     JOIN categories c ON p.category_id = c.category_id
-     WHERE ${conditions.join(' AND ')}
-     ORDER BY p.product_name`,
-    params
-  );
-  res.json(rows);
+  try {
+    const { rows } = await db.query(
+      `SELECT p.product_id, p.category_id, p.product_name,
+              p.description, p.sku, p.price,
+              p.inventory_quantity, c.category_name
+       FROM products p
+       JOIN categories c ON p.category_id = c.category_id
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY p.product_name`,
+      params
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error('Failed to load products:', err.message);
+    res.status(500).json({ error: 'Unable to load products' });
+  }
 });
 
 // GET /api/products/:id  (includes variants + review summary)
